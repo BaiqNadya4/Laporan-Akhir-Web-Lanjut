@@ -1,0 +1,251 @@
+1. DASHBOARD
+<?php
+include '../koneksi.php';
+if (!isset($_SESSION['admin'])) {
+    header('Location: login.php');
+    exit;
+}
+include '../partials/header.php';
+?>
+
+<h2>Dashboard Admin</h2>
+<p>Selamat datang, <?= $_SESSION['admin']['nama_admin']; ?></p>
+<a href="kos.php">Kelola Data Kos</a> |
+<a href="../logout.php">Logout</a>
+
+<?php include '../partials/footer.php'; ?>
+
+2. KOS
+<?php
+include '../koneksi.php';
+
+if (!isset($_SESSION['admin'])) {
+    header('Location: login.php');
+    exit;
+}
+
+if (isset($_POST['tambah'])) {
+    $nama = $_POST['nama_kos'];
+    $alamat = $_POST['alamat'];
+    $harga = $_POST['harga'];
+    $fasilitas = $_POST['fasilitas'];
+    $deskripsi = $_POST['deskripsi'];
+    $status = $_POST['status'];
+    $kontak = $_POST['kontak'];
+
+    mysqli_query($conn, "INSERT INTO kos
+        (nama_kos, alamat, harga, fasilitas, deskripsi, status, kontak)
+        VALUES
+        ('$nama','$alamat','$harga','$fasilitas','$deskripsi','$status','$kontak')");
+}
+
+if (isset($_GET['hapus'])) {
+    $id = $_GET['hapus'];
+    mysqli_query($conn, "DELETE FROM kos WHERE id_kos='$id'");
+}
+
+$data = mysqli_query($conn, "SELECT * FROM kos ORDER BY id_kos DESC");
+include '../partials/header.php';
+?>
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="../assets/jquery.dataTables.min.css">
+
+<h2>Kelola Data Kos</h2>
+<a href="dashboard.php">Kembali</a>
+
+<h3>Tambah Kos</h3>
+<form method="POST">
+    <input type="text" name="nama_kos" placeholder="Nama Kos" required>
+    <textarea name="alamat" placeholder="Alamat"></textarea>
+    <input type="number" name="harga" placeholder="Harga">
+    <textarea name="fasilitas" placeholder="Fasilitas"></textarea>
+    <textarea name="deskripsi" placeholder="Deskripsi"></textarea>
+
+    <select name="status">
+        <option value="Tersedia">Tersedia</option>
+        <option value="Penuh">Penuh</option>
+    </select>
+
+    <input type="text" name="kontak" placeholder="Kontak">
+    <button type="submit" name="tambah">Simpan</button>
+</form>
+
+<h3>Daftar Kos</h3>
+<table id="tabelKos">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Nama Kos</th>
+            <th>Harga</th>
+            <th>Status</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php $no = 1; while ($row = mysqli_fetch_assoc($data)) : ?>
+        <tr>
+            <td><?= $no++; ?></td>
+            <td><?= $row['nama_kos']; ?></td>
+            <td>Rp <?= number_format($row['harga'], 0, ',', '.'); ?></td>
+            <td><?= $row['status']; ?></td>
+            <td>
+                <a href="?hapus=<?= $row['id_kos']; ?>"
+                   onclick="return confirm('Hapus data?')">
+                   Hapus
+                </a>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </tbody>
+</table>
+
+<!-- jQuery -->
+<script src="../assets/jquery-3.7.0.min.js"></script>
+
+<!-- DataTables JS -->
+<script src="../assets/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#tabelKos').DataTable();
+});
+</script>
+
+<?php include '../partials/footer.php'; ?>
+
+3. LOGIN
+<?php
+include '../koneksi.php';
+
+// Pastikan session dimulai jika belum ada di header.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (isset($_POST['login'])) {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    // Catatan: Sangat disarankan gunakan password_verify nantinya demi keamanan
+    $query = mysqli_query($conn, "SELECT * FROM admin WHERE email='$email' AND password='$password'");
+    $data = mysqli_fetch_assoc($query);
+
+    if ($data) {
+        $_SESSION['admin'] = $data;
+        header('Location: dashboard.php');
+        exit;
+    } else {
+        $error = 'Email atau password salah!';
+    }
+}
+?>
+
+<?php include '../partials/header.php'; ?>
+
+<style>
+    body {
+        margin: 0;
+        background-color: #f0f2f5;
+    }
+
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh; /* Mengatur tinggi agar ke tengah layar */
+    }
+
+    .login-card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        width: 100%;
+        max-width: 350px; /* Lebar maksimal kotak login */
+    }
+
+    .login-card h2 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .login-card input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box; /* Agar padding tidak merusak lebar */
+    }
+
+    .login-card button {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .login-card button:hover {
+        background-color: #0056b3;
+    }
+
+    .error-msg {
+        color: red;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-card">
+        <h2>Login Admin</h2>
+        
+        <?php if (!empty($error)): ?>
+            <p class="error-msg"><?php echo $error; ?></p>
+        <?php endif; ?>
+
+        <form method="POST">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button name="login">Login</button>
+        </form>
+    </div>
+</div>
+
+<?php include '../partials/footer.php'; ?>
+
+4. USERS
+<?php
+include '../koneksi.php';
+if (!isset($_SESSION['admin'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$data = mysqli_query($conn, "SELECT * FROM users");
+include '../partials/header.php';
+?>
+
+<h2>Data User</h2>
+<table>
+    <tr>
+        <th>No</th>
+        <th>Nama</th>
+        <th>Email</th>
+    </tr>
+    <?php $no = 1; while ($row = mysqli_fetch_assoc($data)) : ?>
+    <tr>
+        <td><?= $no++; ?></td>
+        <td><?= $row['nama']; ?></td>
+        <td><?= $row['email']; ?></td>
+    </tr>
+    <?php endwhile; ?>
+</table>
+
+<?php include '../partials/footer.php'; ?> 
